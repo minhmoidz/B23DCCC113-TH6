@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import { Layout, Menu } from 'antd';
-import SubjectManager from '../../components/bai2/SubjectManager';
-import QuestionBank from '../../components/bai2/QuestionBank';
-import ExamGenerator from '../../components/bai2/ExamGenerator';
+import AppointmentForm from '../../components/bai2/AppointmentForm';
+import AppointmentList from '../../components/bai2/AppointmentList';
+import EmployeeManagement from '../../components/bai2/EmployeeManagement';
+import ReviewForm from '../../components/bai2/ReviewForm';
 
 const { Content, Sider } = Layout;
 
 const App: React.FC = () => {
-  const [selectedMenu, setSelectedMenu] = useState('subjects');
+  const [selectedMenu, setSelectedMenu] = useState('appointments');
 
   const renderContent = () => {
     switch(selectedMenu) {
-      case 'subjects': return <SubjectManager />;
-      case 'questions': return <QuestionBank />;
-      case 'exams': return <ExamGenerator />;
-      default: return <SubjectManager />;
+      case 'appointments':
+        return <AppointmentForm appointmentId={''} customerId={''} employeeId={''} serviceId={''} />;
+      case 'appointmentList':
+        return <AppointmentList />;
+      case 'employees':
+        return <EmployeeManagement />;
+      case 'reviews':
+        return <ReviewForm appointmentId={''} customerId={''} employeeId={''} serviceId={''} />;
+      default:
+        return <AppointmentForm appointmentId={''} customerId={''} employeeId={''} serviceId={''} />;
     }
   };
 
@@ -23,13 +30,14 @@ const App: React.FC = () => {
       <Sider width={200}>
         <Menu
           mode="inline"
-          defaultSelectedKeys={['subjects']}
+          defaultSelectedKeys={['appointments']}
           style={{ height: '100%', borderRight: 0 }}
           onSelect={({ key }) => setSelectedMenu(key)}
         >
-          <Menu.Item key="subjects">Quản Lý Môn Học</Menu.Item>
-          <Menu.Item key="questions">Ngân Hàng Câu Hỏi</Menu.Item>
-          <Menu.Item key="exams">Tạo Đề Thi</Menu.Item>
+          <Menu.Item key="appointments">Đặt Lịch Hẹn</Menu.Item>
+          <Menu.Item key="appointmentList">Danh Sách Lịch Hẹn</Menu.Item>
+          <Menu.Item key="employees">Quản Lý Nhân Viên</Menu.Item>
+          <Menu.Item key="reviews">Đánh Giá</Menu.Item>
         </Menu>
       </Sider>
       <Layout>
@@ -39,6 +47,6 @@ const App: React.FC = () => {
       </Layout>
     </Layout>
   );
-}
+};
 
 export default App;
