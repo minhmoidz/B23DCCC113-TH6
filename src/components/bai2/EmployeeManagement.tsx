@@ -16,7 +16,7 @@ import {
   Tag
 } from 'antd';
 import { EditOutlined, DeleteOutlined, TeamOutlined, ScheduleOutlined } from '@ant-design/icons';
-import { getEmployees, getServices, addEmployee, updateEmployee, deleteEmployee, getReviews } from '../../services/bai2/localStorageService';
+import { getEmployees, getServices, addEmployee, updateEmployee, deleteEmployee, getReviews,initializeDemoData } from '../../services/bai2/localStorageService';
 import { Employee, Service, Review } from '../../interfaces/types';
 import dayjs from 'dayjs';
 import locale from 'antd/es/date-picker/locale/vi_VN';
@@ -36,25 +36,27 @@ const daysOfWeek = [
 
 const EmployeeManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
-
+  const [services, setServices] = useState<Service[]>([]);
   useEffect(() => {
-    loadData();
+    const fetchData = async () => {
+      await loadData();
+      setServices(getServices()); // Cập nhật sau khi load xong
+    };
+    fetchData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
+    await initializeDemoData(); // Đảm bảo khởi tạo trước khi lấy dữ liệu
     setEmployees(getEmployees());
-    setServices(getServices());
     setReviews(getReviews());
     setLoading(false);
   };
-
   const showModal = (employee?: Employee) => {
     setEditingEmployee(employee || null);
 
@@ -253,12 +255,13 @@ const EmployeeManagement: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng chọn dịch vụ' }]}
           >
             <Select mode="multiple">
-              {services.map(service => (
-                <Option key={service.id} value={service.id}>
-                  {service.name}
-                </Option>
-              ))}
-            </Select>
+            {services.map(service => (
+              <Select.Option key={service.name} value={service.name}>
+                {service.name}
+              </Select.Option>
+            ))}
+          </Select>
+
           </Form.Item>
 
           <Form.Item

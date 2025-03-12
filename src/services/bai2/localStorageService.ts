@@ -222,6 +222,8 @@ export const setCurrentUser = (user: User | null): void => {
 };
 
 // Initialize demo data if empty
+
+// Khởi tạo dữ liệu mẫu
 export const initializeDemoData = (): void => {
   if (getServices().length === 0) {
     const services: Omit<Service, 'id'>[] = [
@@ -231,50 +233,11 @@ export const initializeDemoData = (): void => {
       { name: 'Spa facial', price: 350000, durationMinutes: 90, description: 'Chăm sóc da mặt' },
       { name: 'Sửa máy tính', price: 200000, durationMinutes: 120, description: 'Kiểm tra và sửa chữa lỗi' },
     ];
-
+    // Thêm từng dịch vụ vào hệ thống
     services.forEach(service => addService(service));
-
-    const employees: Omit<Employee, 'id' | 'averageRating'>[] = [
-      {
-        name: 'Nguyễn Văn A',
-        services: ['1', '2'],
-        maxAppointmentsPerDay: 8,
-        workingHours: [
-          { day: 'Monday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Tuesday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Wednesday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Thursday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Friday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Saturday', startTime: '09:00', endTime: '12:00', isWorking: true },
-          { day: 'Sunday', startTime: '09:00', endTime: '17:00', isWorking: false },
-        ]
-      },
-      {
-        name: 'Trần Thị B',
-        services: ['3', '4'],
-        maxAppointmentsPerDay: 6,
-        workingHours: [
-          { day: 'Monday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Tuesday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Wednesday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Thursday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Friday', startTime: '09:00', endTime: '17:00', isWorking: true },
-          { day: 'Saturday', startTime: '09:00', endTime: '12:00', isWorking: false },
-          { day: 'Sunday', startTime: '09:00', endTime: '17:00', isWorking: false },
-        ]
-      },
-    ];
-
-    employees.forEach(employee => addEmployee(employee));
-
-    // Add demo admin user
-    addUser({
-      username: 'admin',
-      password: 'admin123',
-      role: 'admin',
-    });
   }
 };
+
 export const saveServices = (services: Service[]) => {
   localStorage.setItem('services', JSON.stringify(services));
 };
