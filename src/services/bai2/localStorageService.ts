@@ -55,7 +55,13 @@ export const getEmployees = (): Employee[] => {
 
 export const addEmployee = (employee: Omit<Employee, 'id' | 'averageRating'>): Employee => {
   const employees = getEmployees();
-  const newEmployee = { ...employee, id: Date.now().toString(), averageRating: 0 };
+  // Thêm workingHours vào đối tượng nhân viên
+  const newEmployee: Employee = {
+    ...employee,
+    id: Date.now().toString(),
+    averageRating: 0,
+    workingHours: employee.workingHours || [] // Đảm bảo có workingHours
+  };
   setItem(KEYS.EMPLOYEES, [...employees, newEmployee]);
   return newEmployee;
 };
@@ -64,10 +70,12 @@ export const updateEmployee = (employee: Employee): void => {
   const employees = getEmployees();
   const index = employees.findIndex(e => e.id === employee.id);
   if (index !== -1) {
-    employees[index] = employee;
+    // Cập nhật toàn bộ thông tin, bao gồm workingHours
+    employees[index] = { ...employee };
     setItem(KEYS.EMPLOYEES, employees);
   }
 };
+
 
 export const deleteEmployee = (id: string): void => {
   const employees = getEmployees();
@@ -186,42 +194,7 @@ export const deleteCustomer = (id: string): void => {
   setItem(KEYS.CUSTOMERS, customers.filter(c => c.id !== id));
 };
 
-// Users CRUD
-export const getUsers = (): User[] => {
-  return getItem<User[]>(KEYS.USERS, []);
-};
 
-export const addUser = (user: Omit<User, 'id'>): User => {
-  const users = getUsers();
-  const newUser = { ...user, id: Date.now().toString() };
-  setItem(KEYS.USERS, [...users, newUser]);
-  return newUser;
-};
-
-export const updateUser = (user: User): void => {
-  const users = getUsers();
-  const index = users.findIndex(u => u.id === user.id);
-  if (index !== -1) {
-    users[index] = user;
-    setItem(KEYS.USERS, users);
-  }
-};
-
-export const deleteUser = (id: string): void => {
-  const users = getUsers();
-  setItem(KEYS.USERS, users.filter(u => u.id !== id));
-};
-
-// Current user
-export const getCurrentUser = (): User | null => {
-  return getItem<User | null>(KEYS.CURRENT_USER, null);
-};
-
-export const setCurrentUser = (user: User | null): void => {
-  setItem(KEYS.CURRENT_USER, user);
-};
-
-// Initialize demo data if empty
 
 // Khởi tạo dữ liệu mẫu
 export const initializeDemoData = (): void => {

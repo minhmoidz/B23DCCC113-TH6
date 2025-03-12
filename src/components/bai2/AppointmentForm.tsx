@@ -228,16 +228,13 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           rules={[{ required: true, message: 'Vui lòng chọn nhân viên' }]}
         >
           <Select
-            placeholder="Chọn nhân viên"
-            onChange={handleEmployeeChange}
-            disabled={!selectedServiceId}
-          >
-            {filteredEmployees.map(employee => (
-              <Option key={employee.id} value={employee.id}>
-                {employee.name} {employee.averageRating > 0 ? `- ${employee.averageRating}⭐` : ''}
-              </Option>
-            ))}
-          </Select>
+                style={{ width: 140 }}
+              >
+                <Option value="all">Tất cả</Option>
+                {employees.map(employee => (
+                  <Option key={employee.id} value={employee.id}>{employee.name}</Option>
+                ))}
+              </Select>
         </Form.Item>
 
         <Form.Item
@@ -250,10 +247,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             style={{ width: '100%' }}
             onChange={handleDateChange}
             locale={locale}
-            disabledDate={(current) => {
-              // Disable dates before today
-              return current && current < new Date(new Date().setHours(0, 0, 0, 0));
-            }}
+
           />
         </Form.Item>
 
@@ -263,13 +257,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           rules={[{ required: true, message: 'Vui lòng chọn giờ' }]}
         >
           <Select
-            placeholder="Chọn giờ hẹn"
-            disabled={!selectedServiceId || !selectedEmployeeId || !selectedDate}
+            placeholder={availableTimeSlots.length ? "Chọn giờ hẹn" : "Không có giờ trống"}
+            disabled={!availableTimeSlots.length}
           >
             {availableTimeSlots.map(slot => (
               <Option key={slot} value={slot}>{slot}</Option>
             ))}
           </Select>
+
         </Form.Item>
 
         <Form.Item name="notes" label="Ghi chú">
