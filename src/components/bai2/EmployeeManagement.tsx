@@ -1,98 +1,47 @@
+// components/EmployeeManagement.tsx
 import React, { useState, useEffect } from 'react';
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  InputNumber,
-  Checkbox,
-  TimePicker,
-  Space,
-  Card,
-  message,
-  Tooltip,
-  Tag
-} from 'antd';
-import { EditOutlined, DeleteOutlined, TeamOutlined, ScheduleOutlined } from '@ant-design/icons';
-import { getEmployees, getServices, addEmployee, updateEmployee, deleteEmployee, getReviews,initializeDemoData } from '../../services/bai2/localStorageService';
-import { Employee, Service, Review } from '../../interfaces/types';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, TimePicker, Space, Popconfirm, Card, Rate } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Employee, Service } from '../../interfaces/types';
+import { employeeService, serviceService } from '../../services/bai2/localStorageService';
 import dayjs from 'dayjs';
-import locale from 'antd/es/date-picker/locale/vi_VN';
+import { v4 as uuidv4 } from 'uuid';
 
 const { Option } = Select;
-const { TextArea } = Input;
-
-const daysOfWeek = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday'
-];
 
 const EmployeeManagement: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
-  const [services, setServices] = useState<Service[]>([]);
+
   useEffect(() => {
-    const fetchData = async () => {
-      await loadData();
-      setServices(getServices()); // Cập nhật sau khi load xong
-    };
-    fetchData();
+    loadData();
   }, []);
 
-  const loadData = async () => {
-    setLoading(true);
-    await initializeDemoData(); // Đảm bảo khởi tạo trước khi lấy dữ liệu
-    setEmployees(getEmployees());
-    setReviews(getReviews());
-    setLoading(false);
+  const loadData = () => {
+    const employeesData = employeeService.getAll();
+    const servicesData = serviceService.getAll();
+    setEmployees(employeesData);
+    setServices(servicesData);
   };
+
   const showModal = (employee?: Employee) => {
     setEditingEmployee(employee || null);
-
     if (employee) {
-      // Format working hours for form
-      const formValues = {
-        ...employee,
-        workingHours: employee.workingHours.reduce((acc, wh) => ({
-          ...acc,
-          [`${wh.day}_isWorking`]: wh.isWorking,
-          [`${wh.day}_startTime`]: wh.startTime ? dayjs(wh.startTime, 'HH:mm') : null,
-          [`${wh.day}_endTime`]: wh.endTime ? dayjs(wh.endTime, 'HH:mm') : null,
-        }), {})
-      };
-
-      form.setFieldsValue(formValues);
-    } else {
-      // Set default values for new employee
-      const defaultWorkingHours = daysOfWeek.reduce((acc, day) => ({
-        ...acc,
-        [`${day}_isWorking`]: day !== 'Sunday',
-        [`${day}_startTime`]: dayjs('09:00', 'HH:mm'),
-        [`${day}_endTime`]: dayjs('17:00', 'HH:mm'),
-      }), {});
-
       form.setFieldsValue({
-        maxAppointmentsPerDay: 8,
-        ...defaultWorkingHours
+        ...employee,
+        workSchedule: employee.workSchedule.map(schedule => ({
+          ...schedule,
+          startTime: dayjs(schedule.startTime, 'HH:mm'),
+          endTime: dayjs(schedule.endTime, 'HH:mm'),
+        })),
       });
+    } else {
+      form.resetFields();
     }
-
     setIsModalVisible(true);
-  };
-
-  const handleOk = () => {
-    form.submit();
   };
 
   const handleCancel = () => {
@@ -100,55 +49,48 @@ const EmployeeManagement: React.FC = () => {
     form.resetFields();
   };
 
-  const handleDelete = (employeeId: string) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa nhân viên',
-      content: 'Bạn có chắc chắn muốn xóa nhân viên này? Hành động này không thể hoàn tác.',
-      onOk() {
-        deleteEmployee(employeeId);
-        message.success('Xóa nhân viên thành công');
-        loadData();
-      },
-    });
-  };
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
 
-  const onFinish = (values: any) => {
-    // Format working hours from form values
-    const workingHours = daysOfWeek.map(day => ({
-      day,
-      startTime: values[`${day}_startTime`] ? values[`${day}_startTime`].format('HH:mm') : '09:00',
-      endTime: values[`${day}_endTime`] ? values[`${day}_endTime`].format('HH:mm') : '17:00',
-      isWorking: values[`${day}_isWorking`] || false,
-    }));
+      // Chuyển đổi định dạng thời gian
+      const formattedValues = {
+        ...values,
+        workSchedule: values.workSchedule.map((schedule: any) => ({
+          ...schedule,
+          startTime: schedule.startTime.format('HH:mm'),
+          endTime: schedule.endTime.format('HH:mm'),
+        })),
+      };
 
-    const employeeData = {
-      name: values.name,
-      services: values.services,
-      maxAppointmentsPerDay: values.maxAppointmentsPerDay,
-      workingHours,
-    };
+      if (editingEmployee) {
+        // Cập nhật nhân viên
+        const updatedEmployee = {
+          ...editingEmployee,
+          ...formattedValues,
+        };
+        employeeService.update(updatedEmployee);
+      } else {
+        // Thêm nhân viên mới
+        const newEmployee: Employee = {
+          id: uuidv4(),
+          averageRating: 0,
+          ...formattedValues,
+        };
+        employeeService.add(newEmployee);
+      }
 
-    if (editingEmployee) {
-      // Update existing employee
-      updateEmployee({
-        ...employeeData,
-        id: editingEmployee.id,
-        averageRating: editingEmployee.averageRating,
-      });
-      message.success('Cập nhật nhân viên thành công');
-    } else {
-      // Add new employee
-      addEmployee(employeeData);
-      message.success('Thêm nhân viên thành công');
+      setIsModalVisible(false);
+      form.resetFields();
+      loadData();
+    } catch (error) {
+      console.error('Validate Failed:', error);
     }
-
-    setIsModalVisible(false);
-    form.resetFields();
-    loadData();
   };
 
-  const getEmployeeReviews = (employeeId: string) => {
-    return reviews.filter(r => r.employeeId === employeeId);
+  const handleDelete = (id: string) => {
+    employeeService.delete(id);
+    loadData();
   };
 
   const columns = [
@@ -158,20 +100,16 @@ const EmployeeManagement: React.FC = () => {
       key: 'name',
     },
     {
-      title: 'Dịch vụ',
+      title: 'Dịch vụ cung cấp',
       dataIndex: 'services',
       key: 'services',
       render: (serviceIds: string[]) => (
-        <div>
+        <>
           {serviceIds.map(id => {
             const service = services.find(s => s.id === id);
-            return service ? (
-              <Tag color="blue" key={id}>
-                {service.name}
-              </Tag>
-            ) : null;
+            return service ? <div key={id}>{service.name}</div> : null;
           })}
-        </div>
+        </>
       ),
     },
     {
@@ -183,34 +121,27 @@ const EmployeeManagement: React.FC = () => {
       title: 'Đánh giá',
       dataIndex: 'averageRating',
       key: 'averageRating',
-      render: (rating: number) => (
-        <div>
-          {rating > 0 ? (
-            <span>{rating.toFixed(1)} ⭐ ({getEmployeeReviews(editingEmployee?.id || '').length} đánh giá)</span>
-          ) : (
-            <span>Chưa có đánh giá</span>
-          )}
-        </div>
-      ),
+      render: (rating: number) => <Rate disabled defaultValue={rating} allowHalf />,
     },
     {
       title: 'Thao tác',
       key: 'action',
-      render: (text: string, record: Employee) => (
-        <Space size="small">
-          <Tooltip title="Chỉnh sửa">
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => showModal(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Xóa">
-            <Button
-              icon={<DeleteOutlined />}
-              danger
-              onClick={() => handleDelete(record.id)}
-            />
-          </Tooltip>
+      render: (_: any, record: Employee) => (
+        <Space size="middle">
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => showModal(record)}
+          >
+            Sửa
+          </Button>
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa nhân viên này?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Có"
+            cancelText="Không"
+          >
+            <Button danger icon={<DeleteOutlined />}>Xóa</Button>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -220,84 +151,125 @@ const EmployeeManagement: React.FC = () => {
     <Card title="Quản lý nhân viên">
       <Button
         type="primary"
-        style={{ marginBottom: 16 }}
+        icon={<PlusOutlined />}
         onClick={() => showModal()}
+        style={{ marginBottom: 16 }}
       >
-        Thêm nhân viên mới
+        Thêm nhân viên
       </Button>
 
       <Table
         columns={columns}
         dataSource={employees}
         rowKey="id"
-        loading={loading}
+        expandable={{
+          expandedRowRender: (record) => (
+            <div>
+
+              <h4>Lịch làm việc:</h4>
+              <ul>
+                {record.workSchedule.map((schedule, index) => {
+                  const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+                  return (
+                    <li key={index}>
+                      {days[schedule.dayOfWeek]}: {schedule.startTime} - {schedule.endTime}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ),
+        }}
       />
 
       <Modal
-        title={editingEmployee ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
+        title={editingEmployee ? "Cập nhật thông tin nhân viên" : "Thêm nhân viên mới"}
         visible={isModalVisible}
-        onOk={handleOk}
+        onOk={handleSave}
         onCancel={handleCancel}
         width={800}
       >
-        <Form form={form} onFinish={onFinish} layout="vertical">
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            workSchedule: [{ dayOfWeek: 1, startTime: dayjs('09:00', 'HH:mm'), endTime: dayjs('17:00', 'HH:mm') }],
+            maxAppointmentsPerDay: 10,
+          }}
+        >
           <Form.Item
-            label="Tên nhân viên"
             name="name"
-            rules={[{ required: true, message: 'Vui lòng nhập tên nhân viên' }]}
+            label="Tên nhân viên"
+            rules={[{ required: true, message: 'Vui lòng nhập tên nhân viên!' }]}
           >
             <Input />
           </Form.Item>
 
           <Form.Item
-            label="Dịch vụ"
             name="services"
-            rules={[{ required: true, message: 'Vui lòng chọn dịch vụ' }]}
+            label="Dịch vụ cung cấp"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một dịch vụ!' }]}
           >
-            <Select mode="multiple">
-            {services.map(service => (
-              <Select.Option key={service.name} value={service.name}>
-                {service.name}
-              </Select.Option>
-            ))}
-          </Select>
-
+            <Select mode="multiple" placeholder="Chọn dịch vụ">
+              {services.map(service => (
+                <Option key={service.id} value={service.id}>{service.name}</Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
-            label="Số lịch hẹn tối đa/ngày"
             name="maxAppointmentsPerDay"
-            rules={[{ required: true, message: 'Vui lòng nhập số lịch hẹn tối đa' }]}
+            label="Số lịch hẹn tối đa/ngày"
+            rules={[{ required: true, message: 'Vui lòng nhập số lịch hẹn tối đa!' }]}
           >
-            <InputNumber min={1} max={20} />
+            <InputNumber min={1} max={50} />
           </Form.Item>
 
-          <Card title="Giờ làm việc" size="small">
-            {daysOfWeek.map(day => (
-              <Space key={day} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                <Form.Item
-                  name={`${day}_isWorking`}
-                  valuePropName="checked"
-                  style={{ marginBottom: 0 }}
-                >
-                  <Checkbox>{day}</Checkbox>
+          <Form.List name="workSchedule">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'dayOfWeek']}
+                      rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}
+                    >
+                      <Select style={{ width: 120 }} placeholder="Ngày">
+                        <Option value={0}>Chủ nhật</Option>
+                        <Option value={1}>Thứ 2</Option>
+                        <Option value={2}>Thứ 3</Option>
+                        <Option value={3}>Thứ 4</Option>
+                        <Option value={4}>Thứ 5</Option>
+                        <Option value={5}>Thứ 6</Option>
+                        <Option value={6}>Thứ 7</Option>
+                      </Select>
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'startTime']}
+                      rules={[{ required: true, message: 'Vui lòng chọn giờ bắt đầu!' }]}
+                    >
+                      <TimePicker format="HH:mm" placeholder="Giờ bắt đầu" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'endTime']}
+                      rules={[{ required: true, message: 'Vui lòng chọn giờ kết thúc!' }]}
+                    >
+                      <TimePicker format="HH:mm" placeholder="Giờ kết thúc" />
+                    </Form.Item>
+                    <Button onClick={() => remove(name)} danger>Xóa</Button>
+                  </Space>
+                ))}
+                <Form.Item>
+                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                    Thêm lịch làm việc
+                  </Button>
                 </Form.Item>
-                <Form.Item
-                  name={`${day}_startTime`}
-                  style={{ marginBottom: 0 }}
-                >
-                  <TimePicker format="HH:mm" minuteStep={15} />
-                </Form.Item>
-                <span>-</span>
-                <Form.Item
-                  name={`${day}_endTime`}
-                  style={{ marginBottom: 0 }}
-                >
-                  <TimePicker format="HH:mm" minuteStep={15} />
-                </Form.Item>
-              </Space>
-            ))}
-          </Card>
+              </>
+            )}
+          </Form.List>
         </Form>
       </Modal>
     </Card>
@@ -305,3 +277,4 @@ const EmployeeManagement: React.FC = () => {
 };
 
 export default EmployeeManagement;
+

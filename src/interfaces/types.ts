@@ -1,14 +1,13 @@
-// types.ts - định nghĩa các kiểu dữ liệu
+// models/types.ts
 export interface Employee {
   id: string;
   name: string;
   services: string[];
   maxAppointmentsPerDay: number;
-  workingHours: {
-    day: string; // "Monday", "Tuesday", etc.
-    startTime: string; // "09:00"
-    endTime: string; // "17:00"
-    isWorking: boolean;
+  workSchedule: {
+    dayOfWeek: number; // 0-6 (Chủ nhật - Thứ 7)
+    startTime: string; // Format: "HH:mm"
+    endTime: string; // Format: "HH:mm"
   }[];
   averageRating: number;
 }
@@ -26,14 +25,13 @@ export interface Appointment {
   customerId: string;
   customerName: string;
   customerPhone: string;
-  employeeId: string;
   serviceId: string;
-  date: string; // ISO format
-  startTime: string; // "09:00"
-  endTime: string; // Calculated based on service duration
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  employeeId: string;
+  date: string; // Format: "YYYY-MM-DD"
+  startTime: string; // Format: "HH:mm"
+  endTime: string; // Format: "HH:mm"
+  status: "pending" | "confirmed" | "completed" | "cancelled";
   createdAt: string;
-  notes?: string;
 }
 
 export interface Review {
@@ -44,11 +42,8 @@ export interface Review {
   serviceId: string;
   rating: number; // 1-5
   comment: string;
+  employeeResponse?: string;
   createdAt: string;
-  reply?: {
-    text: string;
-    createdAt: string;
-  };
 }
 
 export interface Customer {
@@ -56,13 +51,4 @@ export interface Customer {
   name: string;
   phone: string;
   email?: string;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  password: string;
-  role: 'admin' | 'employee' | 'customer';
-  employeeId?: string;
-  customerId?: string;
 }

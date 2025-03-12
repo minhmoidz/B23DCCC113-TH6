@@ -1,164 +1,151 @@
-import { Appointment, Employee, Service } from '../../interfaces/types';
-import { format, parse, isWithinInterval, addMinutes } from 'date-fns';
-import { vi } from 'date-fns/locale';
+// utils.ts
+import moment from 'moment';
+import { Employee, Service, Appointment } from '../../interfaces/types';
 
-// Format date for display
-export const formatDate = (dateString: string): string => {
-  return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi });
-};
+// Tạo khung giờ hẹn dựa vào giờ làm việc của nhân viên
+export function getAvailableTimeSlots(
+  employee: Employee,
+  service: Service,
+  date: string,
+  appointments: Appointment[]
+): string[] {
+  // Lấy thứ trong tuần từ ngày đã chọn
+  const dayOfWeek = getEnglishDayOfWeek(date);
 
-// Format time for display
-export const formatTime = (timeString: string): string => {
-  return timeString;
-};
+  // Tìm giờ làm việc của nhân viên vào ngày này
+  const workingHours = employee.workingHours.find(hours => hours.day === dayOfWeek);
 
-// Get day of week from date
-export const getDayOfWeek = (dateString: string): string => {
+  // Nếu nhân viên không làm việc vào ngày này hoặc dữ liệu không hợp lệ, trả về mảng rỗng
+  if (!workingHours || !workingHours.isWorking ||
+      !workingHours.startTime || !workingHours.endTime ||
+      workingHours.startTime === 'Invalid Date' ||
+      workingHours.endTime === 'Invalid Date') {
+    return [];
+  }
+
+  // Tạo các khoảng thời gian theo giờ làm việc của nhân viên
+  const slots: string[] = [];
+  const startTime = moment(workingHours.startTime, 'HH:mm');
+  const endTime = moment(workingHours.endTime, 'HH:mm');
+
+  // Tạo khoảng thời gian 30 phút (có thể thay đổi nếu cần)
+  const interval = 30; // phút
+  let current = startTime.clone();
+
+  // Tạo các slot thời gian trong khoảng làm việc của nhân viên
+  while (current.isBefore(endTime)) {
+    const timeSlot = current.format('HH:mm');
+
+    // Tính thời điểm kết thúc lịch hẹn nếu bắt đầu ở slot này
+    const appointmentEndTime = calculateEndTime(timeSlot, service.durationMinutes);
+
+    // Kiểm tra xem lịch hẹn có kết thúc trước khi nhân viên ngừng làm việc không
+    const appointmentEndMoment = moment(appointmentEndTime, 'HH:mm');
+    if (appointmentEndMoment.isAfter(endTime)) {
+      break; // Bỏ qua các slot sẽ kéo dài quá giờ làm việc
+    }
+
+    // Kiểm tra xem slot này có trùng với các lịch hẹn đã có không
+    const hasConflict = hasAppointmentConflict(
+      appointments,
+      employee.id,
+      date,
+      timeSlot,
+      appointmentEndTime
+    );
+
+    // Nếu không có xung đột, thêm slot vào danh sách
+    if (!hasConflict) {
+      slots.push(timeSlot);
+    }
+
+    // Chuyển đến slot tiếp theo
+    current.add(interval, 'minutes');
+  }
+
+  return slots;
+}
+
+// Chuyển đổi ngày thành thứ trong tuần bằng tiếng Anh
+export function getEnglishDayOfWeek(dateString: string) {
   const date = new Date(dateString);
-  return format(date, 'EEEE', { locale: vi });
-};
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[date.getDay()];
+}
 
-// Check if employee is available on a specific date and time
-export const isEmployeeAvailable = (
+// Kiểm tra xem nhân viên có làm việc vào thời gian đã chọn không
+export function isEmployeeAvailable(
   employee: Employee,
   date: string,
   startTime: string,
   endTime: string
-): boolean => {
-  const dayOfWeek = getDayOfWeek(date);
+): boolean {
+  const dayOfWeek = getEnglishDayOfWeek(date);
+  const workingHours = employee.workingHours.find(hours => hours.day === dayOfWeek);
 
-  // Check if employee works on this day
-  const workingHours = employee.workingHours.find(wh => wh.day === dayOfWeek);
   if (!workingHours || !workingHours.isWorking) {
     return false;
   }
 
-  // Check if time is within working hours
-  const startWorkTime = parse(workingHours.startTime, 'HH:mm', new Date());
-  const endWorkTime = parse(workingHours.endTime, 'HH:mm', new Date());
-  const appointmentStart = parse(startTime, 'HH:mm', new Date());
-  const appointmentEnd = parse(endTime, 'HH:mm', new Date());
+  const workStart = moment(workingHours.startTime, 'HH:mm');
+  const workEnd = moment(workingHours.endTime, 'HH:mm');
+  const appointmentStart = moment(startTime, 'HH:mm');
+  const appointmentEnd = moment(endTime, 'HH:mm');
 
-  if (
-    !isWithinInterval(appointmentStart, { start: startWorkTime, end: endWorkTime }) ||
-    !isWithinInterval(appointmentEnd, { start: startWorkTime, end: endWorkTime })
-  ) {
-    return false;
-  }
+  // Kiểm tra xem lịch hẹn có nằm trong giờ làm việc không
+  return appointmentStart.isSameOrAfter(workStart) &&
+         appointmentEnd.isSameOrBefore(workEnd);
+}
 
-  return true;
-};
+// Tính thời gian kết thúc dựa vào thời gian bắt đầu và thời lượng dịch vụ
+export function calculateEndTime(startTime: string, durationMinutes: number): string {
+  const start = moment(startTime, 'HH:mm');
+  const end = start.clone().add(durationMinutes, 'minutes');
+  return end.format('HH:mm');
+}
 
-// Check for appointment conflicts
-export const hasAppointmentConflict = (
+// Kiểm tra xem có xung đột với các lịch hẹn khác không
+export function hasAppointmentConflict(
   appointments: Appointment[],
   employeeId: string,
   date: string,
   startTime: string,
   endTime: string,
   excludeAppointmentId?: string
-): boolean => {
-  const appointmentStart = parse(startTime, 'HH:mm', new Date());
-  const appointmentEnd = parse(endTime, 'HH:mm', new Date());
-
-  // Filter appointments for the same employee and date
-  const employeeAppointments = appointments.filter(
-    a => a.employeeId === employeeId &&
-    a.date === date &&
-    a.status !== 'cancelled' &&
-    (excludeAppointmentId ? a.id !== excludeAppointmentId : true)
+): boolean {
+  // Lọc các lịch hẹn của nhân viên vào ngày cụ thể (trừ lịch hẹn đang chỉnh sửa)
+  const employeeAppointments = appointments.filter(app =>
+    app.employeeId === employeeId &&
+    app.date === date &&
+    (!excludeAppointmentId || app.id !== excludeAppointmentId)
   );
 
-  // Check for time conflicts
-  return employeeAppointments.some(a => {
-    const existingStart = parse(a.startTime, 'HH:mm', new Date());
-    const existingEnd = parse(a.endTime, 'HH:mm', new Date());
+  // Chuyển đổi thời gian bắt đầu và kết thúc sang moment để dễ so sánh
+  const newStart = moment(startTime, 'HH:mm');
+  const newEnd = moment(endTime, 'HH:mm');
 
+  // Kiểm tra xung đột với từng lịch hẹn hiện có
+  return employeeAppointments.some(app => {
+    const existingStart = moment(app.startTime, 'HH:mm');
+    const existingEnd = moment(app.endTime, 'HH:mm');
+
+    // Xung đột xảy ra khi có bất kỳ sự chồng chéo nào về thời gian
     return (
-      (appointmentStart >= existingStart && appointmentStart < existingEnd) ||
-      (appointmentEnd > existingStart && appointmentEnd <= existingEnd) ||
-      (appointmentStart <= existingStart && appointmentEnd >= existingEnd)
+      (newStart.isSameOrAfter(existingStart) && newStart.isBefore(existingEnd)) ||
+      (newEnd.isAfter(existingStart) && newEnd.isSameOrBefore(existingEnd)) ||
+      (newStart.isSameOrBefore(existingStart) && newEnd.isSameOrAfter(existingEnd))
     );
   });
-};
+}
 
-// Calculate end time based on start time and service duration
-export const calculateEndTime = (startTime: string, durationMinutes: number): string => {
-  const startDate = parse(startTime, 'HH:mm', new Date());
-  const endDate = addMinutes(startDate, durationMinutes);
-  return format(endDate, 'HH:mm');
-};
-
-// Count appointments per day for an employee
-export const countAppointmentsPerDay = (
+// Đếm số lượng lịch hẹn trong ngày của nhân viên
+export function countAppointmentsPerDay(
   appointments: Appointment[],
   employeeId: string,
   date: string
-): number => {
-  return appointments.filter(
-    a => a.employeeId === employeeId &&
-    a.date === date &&
-    (a.status === 'confirmed' || a.status === 'pending')
+): number {
+  return appointments.filter(app =>
+    app.employeeId === employeeId &&
+    app.date === date
   ).length;
-};
-
-// Get available time slots for a specific date and employee
-export const getAvailableTimeSlots = (
-  employee: Employee,
-  service: Service,
-  date: string,
-  appointments: Appointment[]
-): string[] => {
-  const dayOfWeek = getDayOfWeek(date);
-  const workingHours = employee.workingHours.find(wh => wh.day === dayOfWeek);
-
-  if (!workingHours || !workingHours.isWorking) {
-    return [];
-  }
-
-  const slots: string[] = [];
-  const startTime = parse(workingHours.startTime, 'HH:mm', new Date());
-  const endTime = parse(workingHours.endTime, 'HH:mm', new Date());
-  const { durationMinutes } = service;
-
-  // Generate slots in 30-minute increments
-  let currentSlot = startTime;
-  while (addMinutes(currentSlot, durationMinutes) <= endTime) {
-    const slotTime = format(currentSlot, 'HH:mm');
-    const slotEndTime = calculateEndTime(slotTime, durationMinutes);
-
-    // Check if slot is available
-    if (!hasAppointmentConflict(appointments, employee.id, date, slotTime, slotEndTime)) {
-      slots.push(slotTime);
-    }
-
-    // Move to next slot (30 min increment)
-    currentSlot = addMinutes(currentSlot, 30);
-  }
-
-  return slots;
-};
-
-// Calculate total revenue for a period
-export const calculateRevenue = (
-  appointments: Appointment[],
-  services: Service[],
-  startDate?: string,
-  endDate?: string,
-  employeeId?: string,
-  serviceId?: string
-): number => {
-  return appointments
-    .filter(a => {
-      const appointmentDate = new Date(a.date);
-      const filterByDate = !startDate || !endDate ||
-        (appointmentDate >= new Date(startDate) && appointmentDate <= new Date(endDate));
-      const filterByEmployee = !employeeId || a.employeeId === employeeId;
-      const filterByService = !serviceId || a.serviceId === serviceId;
-      return a.status === 'completed' && filterByDate && filterByEmployee && filterByService;
-    })
-    .reduce((total, appointment) => {
-      const service = services.find(s => s.id === appointment.serviceId);
-      return total + (service?.price || 0);
-    }, 0);
-};
+}

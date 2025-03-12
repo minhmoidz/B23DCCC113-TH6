@@ -1,216 +1,233 @@
+// services/storage.ts
+import { Employee, Service, Appointment, Review, Customer } from '../models/types';
 
-// storage.ts - quản lý dữ liệu trong LocalStorage
-import { Employee, Service, Appointment, Review, Customer, User } from '../../interfaces/types';
-
-const KEYS = {
-  EMPLOYEES: 'appointment_app_employees',
-  SERVICES: 'appointment_app_services',
-  APPOINTMENTS: 'appointment_app_appointments',
-  REVIEWS: 'appointment_app_reviews',
-  CUSTOMERS: 'appointment_app_customers',
-  USERS: 'appointment_app_users',
-  CURRENT_USER: 'appointment_app_current_user',
+const STORAGE_KEYS = {
+  EMPLOYEES: 'app_employees',
+  SERVICES: 'app_services',
+  APPOINTMENTS: 'app_appointments',
+  REVIEWS: 'app_reviews',
+  CUSTOMERS: 'app_customers',
 };
 
-// Helpers
-const getItem = <T>(key: string, defaultValue: T): T => {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : defaultValue;
-};
+// Generic function to get data from localStorage
+export function getFromStorage<T>(key: string): T[] {
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : [];
+}
 
-const setItem = <T>(key: string, value: T): void => {
-  localStorage.setItem(key, JSON.stringify(value));
-};
+// Generic function to save data to localStorage
+export function saveToStorage<T>(key: string, data: T[]): void {
+  localStorage.setItem(key, JSON.stringify(data));
+}
 
-// Services CRUD
-export const getServices = (): Service[] => {
-  return getItem<Service[]>(KEYS.SERVICES, []);
-};
-
-export const addService = (service: Omit<Service, 'id'>): Service => {
-  const services = getServices();
-  const newService = { ...service, id: Date.now().toString() };
-  setItem(KEYS.SERVICES, [...services, newService]);
-  return newService;
-};
-
-export const updateService = (service: Service): void => {
-  const services = getServices();
-  const index = services.findIndex(s => s.id === service.id);
-  if (index !== -1) {
-    services[index] = service;
-    setItem(KEYS.SERVICES, services);
+// Employee storage functions
+export const employeeService = {
+  getAll: (): Employee[] => getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES),
+  save: (employees: Employee[]): void => saveToStorage(STORAGE_KEYS.EMPLOYEES, employees),
+  getById: (id: string): Employee | undefined => {
+    const employees = getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES);
+    return employees.find(emp => emp.id === id);
+  },
+  add: (employee: Employee): void => {
+    const employees = getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES);
+    employees.push(employee);
+    saveToStorage(STORAGE_KEYS.EMPLOYEES, employees);
+  },
+  update: (employee: Employee): void => {
+    const employees = getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES);
+    const index = employees.findIndex(emp => emp.id === employee.id);
+    if (index !== -1) {
+      employees[index] = employee;
+      saveToStorage(STORAGE_KEYS.EMPLOYEES, employees);
+    }
+  },
+  delete: (id: string): void => {
+    const employees = getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES);
+    const filteredEmployees = employees.filter(emp => emp.id !== id);
+    saveToStorage(STORAGE_KEYS.EMPLOYEES, filteredEmployees);
   }
 };
 
-export const deleteService = (id: string): void => {
-  const services = getServices();
-  setItem(KEYS.SERVICES, services.filter(s => s.id !== id));
-};
-
-// Employees CRUD
-export const getEmployees = (): Employee[] => {
-  return getItem<Employee[]>(KEYS.EMPLOYEES, []);
-};
-
-export const addEmployee = (employee: Omit<Employee, 'id' | 'averageRating'>): Employee => {
-  const employees = getEmployees();
-  // Thêm workingHours vào đối tượng nhân viên
-  const newEmployee: Employee = {
-    ...employee,
-    id: Date.now().toString(),
-    averageRating: 0,
-    workingHours: employee.workingHours || [] // Đảm bảo có workingHours
-  };
-  setItem(KEYS.EMPLOYEES, [...employees, newEmployee]);
-  return newEmployee;
-};
-
-export const updateEmployee = (employee: Employee): void => {
-  const employees = getEmployees();
-  const index = employees.findIndex(e => e.id === employee.id);
-  if (index !== -1) {
-    // Cập nhật toàn bộ thông tin, bao gồm workingHours
-    employees[index] = { ...employee };
-    setItem(KEYS.EMPLOYEES, employees);
+// Service storage functions
+export const serviceService = {
+  getAll: (): Service[] => getFromStorage<Service>(STORAGE_KEYS.SERVICES),
+  save: (services: Service[]): void => saveToStorage(STORAGE_KEYS.SERVICES, services),
+  getById: (id: string): Service | undefined => {
+    const services = getFromStorage<Service>(STORAGE_KEYS.SERVICES);
+    return services.find(service => service.id === id);
+  },
+  add: (service: Service): void => {
+    const services = getFromStorage<Service>(STORAGE_KEYS.SERVICES);
+    services.push(service);
+    saveToStorage(STORAGE_KEYS.SERVICES, services);
+  },
+  update: (service: Service): void => {
+    const services = getFromStorage<Service>(STORAGE_KEYS.SERVICES);
+    const index = services.findIndex(s => s.id === service.id);
+    if (index !== -1) {
+      services[index] = service;
+      saveToStorage(STORAGE_KEYS.SERVICES, services);
+    }
+  },
+  delete: (id: string): void => {
+    const services = getFromStorage<Service>(STORAGE_KEYS.SERVICES);
+    const filteredServices = services.filter(s => s.id !== id);
+    saveToStorage(STORAGE_KEYS.SERVICES, filteredServices);
   }
 };
 
+// Appointment storage functions
+export const appointmentService = {
+  getAll: (): Appointment[] => getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS),
+  save: (appointments: Appointment[]): void => saveToStorage(STORAGE_KEYS.APPOINTMENTS, appointments),
+  getById: (id: string): Appointment | undefined => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    return appointments.find(app => app.id === id);
+  },
+  add: (appointment: Appointment): void => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    appointments.push(appointment);
+    saveToStorage(STORAGE_KEYS.APPOINTMENTS, appointments);
+  },
+  update: (appointment: Appointment): void => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    const index = appointments.findIndex(app => app.id === appointment.id);
+    if (index !== -1) {
+      appointments[index] = appointment;
+      saveToStorage(STORAGE_KEYS.APPOINTMENTS, appointments);
+    }
+  },
+  delete: (id: string): void => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    const filteredAppointments = appointments.filter(app => app.id !== id);
+    saveToStorage(STORAGE_KEYS.APPOINTMENTS, filteredAppointments);
+  },
+  getByEmployeeAndDate: (employeeId: string, date: string): Appointment[] => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    return appointments.filter(app => app.employeeId === employeeId && app.date === date);
+  },
+  getByCustomerId: (customerId: string): Appointment[] => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS);
+    return appointments.filter(app => app.customerId === customerId);
+  },
+  checkOverlap: (employeeId: string, date: string, startTime: string, endTime: string, excludeAppointmentId?: string): boolean => {
+    const appointments = getFromStorage<Appointment>(STORAGE_KEYS.APPOINTMENTS)
+      .filter(app =>
+        app.employeeId === employeeId &&
+        app.date === date &&
+        app.status !== 'cancelled' &&
+        (excludeAppointmentId ? app.id !== excludeAppointmentId : true)
+      );
 
-export const deleteEmployee = (id: string): void => {
-  const employees = getEmployees();
-  setItem(KEYS.EMPLOYEES, employees.filter(e => e.id !== id));
-};
+    for (const app of appointments) {
+      if (
+        (startTime >= app.startTime && startTime < app.endTime) ||
+        (endTime > app.startTime && endTime <= app.endTime) ||
+        (startTime <= app.startTime && endTime >= app.endTime)
+      ) {
+        return true; // Có sự trùng lặp
+      }
+    }
 
-// Appointments CRUD
-export const getAppointments = (): Appointment[] => {
-  return getItem<Appointment[]>(KEYS.APPOINTMENTS, []);
-};
-
-export const addAppointment = (appointment: Omit<Appointment, 'id' | 'createdAt'>): Appointment => {
-  const appointments = getAppointments();
-  const newAppointment = {
-    ...appointment,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString()
-  };
-  setItem(KEYS.APPOINTMENTS, [...appointments, newAppointment]);
-  return newAppointment;
-};
-
-export const updateAppointment = (appointment: Appointment): void => {
-  const appointments = getAppointments();
-  const index = appointments.findIndex(a => a.id === appointment.id);
-  if (index !== -1) {
-    appointments[index] = appointment;
-    setItem(KEYS.APPOINTMENTS, appointments);
+    return false; // Không có sự trùng lặp
   }
 };
 
-export const deleteAppointment = (id: string): void => {
-  const appointments = getAppointments();
-  setItem(KEYS.APPOINTMENTS, appointments.filter(a => a.id !== id));
-};
+// Review storage functions
+export const reviewService = {
+  getAll: (): Review[] => getFromStorage<Review>(STORAGE_KEYS.REVIEWS),
+  save: (reviews: Review[]): void => saveToStorage(STORAGE_KEYS.REVIEWS, reviews),
+  getById: (id: string): Review | undefined => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    return reviews.find(review => review.id === id);
+  },
+  add: (review: Review): void => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    reviews.push(review);
+    saveToStorage(STORAGE_KEYS.REVIEWS, reviews);
 
-// Reviews CRUD
-export const getReviews = (): Review[] => {
-  return getItem<Review[]>(KEYS.REVIEWS, []);
-};
+    // Cập nhật đánh giá trung bình của nhân viên
+    updateEmployeeAverageRating(review.employeeId);
+  },
+  update: (review: Review): void => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    const index = reviews.findIndex(r => r.id === review.id);
+    if (index !== -1) {
+      reviews[index] = review;
+      saveToStorage(STORAGE_KEYS.REVIEWS, reviews);
 
-export const addReview = (review: Omit<Review, 'id' | 'createdAt'>): Review => {
-  const reviews = getReviews();
-  const newReview = {
-    ...review,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString()
-  };
-  setItem(KEYS.REVIEWS, [...reviews, newReview]);
+      // Cập nhật đánh giá trung bình của nhân viên
+      updateEmployeeAverageRating(review.employeeId);
+    }
+  },
+  delete: (id: string): void => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    const reviewToDelete = reviews.find(r => r.id === id);
+    const filteredReviews = reviews.filter(r => r.id !== id);
+    saveToStorage(STORAGE_KEYS.REVIEWS, filteredReviews);
 
-  // Update employee average rating
-  updateEmployeeRating(review.employeeId);
-
-  return newReview;
-};
-
-export const updateReview = (review: Review): void => {
-  const reviews = getReviews();
-  const index = reviews.findIndex(r => r.id === review.id);
-  if (index !== -1) {
-    reviews[index] = review;
-    setItem(KEYS.REVIEWS, reviews);
-
-    // Update employee average rating
-    updateEmployeeRating(review.employeeId);
+    // Cập nhật đánh giá trung bình của nhân viên
+    if (reviewToDelete) {
+      updateEmployeeAverageRating(reviewToDelete.employeeId);
+    }
+  },
+  getByEmployeeId: (employeeId: string): Review[] => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    return reviews.filter(review => review.employeeId === employeeId);
+  },
+  getByAppointmentId: (appointmentId: string): Review | undefined => {
+    const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS);
+    return reviews.find(review => review.appointmentId === appointmentId);
   }
 };
 
-export const deleteReview = (id: string): void => {
-  const reviews = getReviews();
-  const review = reviews.find(r => r.id === id);
-  if (review) {
-    setItem(KEYS.REVIEWS, reviews.filter(r => r.id !== id));
-
-    // Update employee average rating
-    updateEmployeeRating(review.employeeId);
+// Customer storage functions
+export const customerService = {
+  getAll: (): Customer[] => getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS),
+  save: (customers: Customer[]): void => saveToStorage(STORAGE_KEYS.CUSTOMERS, customers),
+  getById: (id: string): Customer | undefined => {
+    const customers = getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS);
+    return customers.find(customer => customer.id === id);
+  },
+  add: (customer: Customer): void => {
+    const customers = getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS);
+    customers.push(customer);
+    saveToStorage(STORAGE_KEYS.CUSTOMERS, customers);
+  },
+  update: (customer: Customer): void => {
+    const customers = getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS);
+    const index = customers.findIndex(c => c.id === customer.id);
+    if (index !== -1) {
+      customers[index] = customer;
+      saveToStorage(STORAGE_KEYS.CUSTOMERS, customers);
+    }
+  },
+  delete: (id: string): void => {
+    const customers = getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS);
+    const filteredCustomers = customers.filter(c => c.id !== id);
+    saveToStorage(STORAGE_KEYS.CUSTOMERS, filteredCustomers);
+  },
+  getByPhone: (phone: string): Customer | undefined => {
+    const customers = getFromStorage<Customer>(STORAGE_KEYS.CUSTOMERS);
+    return customers.find(customer => customer.phone === phone);
   }
 };
 
-// Helper to update employee rating
-const updateEmployeeRating = (employeeId: string): void => {
-  const reviews = getReviews().filter(r => r.employeeId === employeeId);
-  const employees = getEmployees();
-  const employee = employees.find(e => e.id === employeeId);
+// Hàm hỗ trợ cập nhật đánh giá trung bình của nhân viên
+function updateEmployeeAverageRating(employeeId: string): void {
+  const reviews = getFromStorage<Review>(STORAGE_KEYS.REVIEWS)
+    .filter(review => review.employeeId === employeeId);
 
-  if (employee && reviews.length > 0) {
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    employee.averageRating = Number((totalRating / reviews.length).toFixed(1));
-    updateEmployee(employee);
+  if (reviews.length === 0) return;
+
+  const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+  const averageRating = totalRating / reviews.length;
+
+  const employees = getFromStorage<Employee>(STORAGE_KEYS.EMPLOYEES);
+  const employeeIndex = employees.findIndex(emp => emp.id === employeeId);
+
+  if (employeeIndex !== -1) {
+    employees[employeeIndex].averageRating = Math.round(averageRating * 10) / 10; // Làm tròn đến 1 chữ số thập phân
+    saveToStorage(STORAGE_KEYS.EMPLOYEES, employees);
   }
-};
-
-// Customers CRUD
-export const getCustomers = (): Customer[] => {
-  return getItem<Customer[]>(KEYS.CUSTOMERS, []);
-};
-
-export const addCustomer = (customer: Omit<Customer, 'id'>): Customer => {
-  const customers = getCustomers();
-  const newCustomer = { ...customer, id: Date.now().toString() };
-  setItem(KEYS.CUSTOMERS, [...customers, newCustomer]);
-  return newCustomer;
-};
-
-export const updateCustomer = (customer: Customer): void => {
-  const customers = getCustomers();
-  const index = customers.findIndex(c => c.id === customer.id);
-  if (index !== -1) {
-    customers[index] = customer;
-    setItem(KEYS.CUSTOMERS, customers);
-  }
-};
-
-export const deleteCustomer = (id: string): void => {
-  const customers = getCustomers();
-  setItem(KEYS.CUSTOMERS, customers.filter(c => c.id !== id));
-};
-
-
-
-// Khởi tạo dữ liệu mẫu
-export const initializeDemoData = (): void => {
-  if (getServices().length === 0) {
-    const services: Omit<Service, 'id'>[] = [
-      { name: 'Cắt tóc nam', price: 100000, durationMinutes: 30, description: 'Cắt tóc theo yêu cầu' },
-      { name: 'Cắt tóc nữ', price: 150000, durationMinutes: 45, description: 'Cắt tóc theo yêu cầu' },
-      { name: 'Massage', price: 300000, durationMinutes: 60, description: 'Massage thư giãn toàn thân' },
-      { name: 'Spa facial', price: 350000, durationMinutes: 90, description: 'Chăm sóc da mặt' },
-      { name: 'Sửa máy tính', price: 200000, durationMinutes: 120, description: 'Kiểm tra và sửa chữa lỗi' },
-    ];
-    // Thêm từng dịch vụ vào hệ thống
-    services.forEach(service => addService(service));
-  }
-};
-
-export const saveServices = (services: Service[]) => {
-  localStorage.setItem('services', JSON.stringify(services));
-};
+}
