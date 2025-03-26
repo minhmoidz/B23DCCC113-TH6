@@ -1,161 +1,170 @@
-// App.tsx
-import React, { useEffect } from 'react';
-import { Layout, Menu, Typography, Divider } from 'antd';
-import { BrowserRouter as Router, Route, Link, Switch, Redirect } from 'react-router-dom';
-import {
-  CalendarOutlined,
-  UserOutlined,
-  SettingOutlined,
-  DashboardOutlined,
-  CommentOutlined,
-  AppstoreOutlined,
-} from '@ant-design/icons';
-import EmployeeManagement from '../../components/bai2/EmployeeManagement';
-import ServiceManagement from '../../components/bai2/ServiceManagement';
-import AppointmentBooking from '../../components/bai2/AppointmentBooking';
-import AppointmentManagement from '../../components/bai2/AppointmentManagement';
-import ReviewManagement from '../../components/bai2/ReviewManagement';
-import StatisticsReport from '../../components/bai2/StatisticsReport';
-import { Employee, Service } from '../../interfaces/types';
-import { employeeService, serviceService } from '../../services/bai2/localStorageService';
-import { v4 as uuidv4 } from 'uuid';
+// src/pages/EmployeeManagement/EmployeeManagement.tsx
+import React, { useState, useMemo } from 'react';
+import { Button, Modal, Input, Select, Row, Col, Card, Space, Typography } from 'antd';
+import { PlusOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
+import EmployeeTable from '../../components/bai2/EmployeeTable';
+import EmployeeForm from '../../components/bai2/EmployeeForm';
+import { NewEmployeeData, UpdateEmployeeData } from '../../models/bai2/employee';
+import  { useEmployeeModel } from '../../models/bai2/useEmployeeModel';
+import { Employee } from '../../models/bai2/employee';
+import { POSITIONS, DEPARTMENTS } from '../../constants/options';
 
-const { Header, Content, Sider } = Layout;
+
 const { Title } = Typography;
+const { Option } = Select;
 
-const App: React.FC = () => {
-  useEffect(() => {
-    // Khởi tạo dữ liệu mẫu nếu chưa có dữ liệu
-    initSampleData();
-  }, []);
+const EmployeeManagement: React.FC = () => {
+  const { employees, addEmployee, updateEmployee, deleteEmployee } = useEmployeeModel();
 
-  const initSampleData = () => {
-    // Kiểm tra xem đã có dữ liệu chưa
-    const employees = employeeService.getAll();
-    const services = serviceService.getAll();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-    // Nếu chưa có dữ liệu, tạo dữ liệu mẫu
-    if (employees.length === 0) {
-      const sampleEmployees: Employee[] = [
-        {
-          id: uuidv4(),
-          name: 'Nguyễn Văn A',
-          services: ['service1', 'service2'],
-          maxAppointmentsPerDay: 10,
-          workSchedule: [
-            { dayOfWeek: 1, startTime: '08:00', endTime: '17:00' },
-            { dayOfWeek: 2, startTime: '08:00', endTime: '17:00' },
-            { dayOfWeek: 3, startTime: '08:00', endTime: '17:00' },
-            { dayOfWeek: 4, startTime: '08:00', endTime: '17:00' },
-            { dayOfWeek: 5, startTime: '08:00', endTime: '17:00' },
-          ],
-          averageRating: 4.5,
-        },
-        {
-          id: uuidv4(),
-          name: 'Trần Thị B',
-          services: ['service1', 'service3'],
-          maxAppointmentsPerDay: 8,
-          workSchedule: [
-            { dayOfWeek: 1, startTime: '09:00', endTime: '18:00' },
-            { dayOfWeek: 2, startTime: '09:00', endTime: '18:00' },
-            { dayOfWeek: 3, startTime: '09:00', endTime: '18:00' },
-            { dayOfWeek: 4, startTime: '09:00', endTime: '18:00' },
-            { dayOfWeek: 6, startTime: '09:00', endTime: '16:00' },
-          ],
-          averageRating: 4.2,
-        },
-      ];
-      employeeService.save(sampleEmployees);
-    }
+  // State cho bộ lọc và tìm kiếm
+  const [filterPosition, setFilterPosition] = useState<string | undefined>(undefined);
+  const [filterDepartment, setFilterDepartment] = useState<string | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
-    if (services.length === 0) {
-      const sampleServices: Service[] = [
-        {
-          id: 'service1',
-          name: 'Cắt tóc nam',
-          price: 100000,
-          durationMinutes: 30,
-          description: 'Dịch vụ cắt tóc nam cơ bản',
-        },
-        {
-          id: 'service2',
-          name: 'Cắt tóc nữ',
-          price: 150000,
-          durationMinutes: 45,
-          description: 'Dịch vụ cắt tóc nữ cơ bản',
-        },
-        {
-          id: 'service3',
-          name: 'Nhuộm tóc',
-          price: 350000,
-          durationMinutes: 120,
-          description: 'Dịch vụ nhuộm tóc theo yêu cầu',
-        },
-      ];
-      serviceService.save(sampleServices);
-    }
+  const showAddModal = () => {
+    setEditingEmployee(null); // Đảm bảo không có dữ liệu cũ khi thêm mới
+    setIsModalVisible(true);
   };
 
+  const showEditModal = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setEditingEmployee(null); // Reset employee đang sửa khi đóng modal
+  };
+
+  const handleFormSubmit = (values: NewEmployeeData | UpdateEmployeeData) => {
+    if (editingEmployee) {
+      // Chế độ chỉnh sửa
+      updateEmployee(editingEmployee.id, values as UpdateEmployeeData);
+    } else {
+      // Chế độ thêm mới
+      addEmployee(values as NewEmployeeData);
+    }
+    setIsModalVisible(false); // Đóng modal sau khi submit thành công
+    setEditingEmployee(null);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteEmployee(id);
+  };
+
+  // Lọc và tìm kiếm dữ liệu
+  const filteredAndSearchedEmployees = useMemo(() => {
+    let result = employees;
+
+    // Lọc theo chức vụ
+    if (filterPosition) {
+      result = result.filter(emp => emp.position === filterPosition);
+    }
+
+    // Lọc theo phòng ban
+    if (filterDepartment) {
+      result = result.filter(emp => emp.department === filterDepartment);
+    }
+
+    // Tìm kiếm theo tên hoặc mã NV (không phân biệt hoa thường)
+    if (searchTerm) {
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      result = result.filter(emp =>
+        emp.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+        emp.id.toLowerCase().includes(lowerCaseSearchTerm)
+      );
+    }
+
+    // Sắp xếp theo lương giảm dần (AntD Table đã có sorter, nhưng nếu muốn mặc định thì làm ở đây)
+    // result.sort((a, b) => b.salary - a.salary); // Mặc định sắp xếp ở đây nếu cần
+
+    return result;
+  }, [employees, filterPosition, filterDepartment, searchTerm]);
+
   return (
-    <Router>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Header style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
-            Hệ thống quản lý đặt lịch hẹn
-          </div>
-        </Header>
-        <Layout>
-          <Sider width={250} style={{ background: '#fff' }}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={['1']}
-              style={{ height: '100%', borderRight: 0 }}
+    <div style={{ padding: '20px' }}>
+      <Card>
+        <Title level={3} style={{ marginBottom: '20px' }}>Quản lý nhân viên</Title>
+
+        {/* Khu vực Lọc và Tìm kiếm */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
+          <Col xs={24} sm={12} md={6}>
+            <Input
+              placeholder="Tìm theo tên hoặc mã NV..."
+              prefix={<SearchOutlined />}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              allowClear // Cho phép xóa nhanh nội dung tìm kiếm
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Select
+              placeholder="Lọc theo chức vụ"
+              style={{ width: '100%' }}
+              allowClear // Cho phép bỏ chọn
+              value={filterPosition}
+              onChange={(value) => setFilterPosition(value)}
             >
-              <Menu.Item key="1" icon={<CalendarOutlined />}>
-                <Link to="/booking">Đặt lịch hẹn</Link>
-              </Menu.Item>
-              <Menu.Item key="2" icon={<CalendarOutlined />}>
-                <Link to="/appointments">Quản lý lịch hẹn</Link>
-              </Menu.Item>
-              <Menu.Item key="3" icon={<UserOutlined />}>
-                <Link to="/employees">Quản lý nhân viên</Link>
-              </Menu.Item>
-              <Menu.Item key="4" icon={<AppstoreOutlined />}>
-                <Link to="/services">Quản lý dịch vụ</Link>
-              </Menu.Item>
-              <Menu.Item key="5" icon={<CommentOutlined />}>
-                <Link to="/reviews">Đánh giá dịch vụ</Link>
-              </Menu.Item>
-              <Menu.Item key="6" icon={<DashboardOutlined />}>
-                <Link to="/statistics">Thống kê & Báo cáo</Link>
-              </Menu.Item>
-            </Menu>
-          </Sider>
-          <Layout style={{ padding: '24px' }}>
-            <Content
-              style={{
-                background: '#fff',
-                padding: 24,
-                margin: 0,
-                minHeight: 280,
-              }}
+              {POSITIONS.map(pos => <Option key={pos} value={pos}>{pos}</Option>)}
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Select
+              placeholder="Lọc theo phòng ban"
+              style={{ width: '100%' }}
+              allowClear
+              value={filterDepartment}
+              onChange={(value) => setFilterDepartment(value)}
             >
-              <Switch>
-                <Route path="/booking" component={AppointmentBooking} />
-                <Route path="/appointments" component={AppointmentManagement} />
-                <Route path="/employees" component={EmployeeManagement} />
-                <Route path="/services" component={ServiceManagement} />
-                <Route path="/reviews" component={ReviewManagement} />
-                <Route path="/statistics" component={StatisticsReport} />
-                <Redirect from="/" to="/booking" />
-              </Switch>
-            </Content>
-          </Layout>
-        </Layout>
-      </Layout>
-    </Router>
+              {DEPARTMENTS.map(dep => <Option key={dep} value={dep}>{dep}</Option>)}
+            </Select>
+          </Col>
+           <Col xs={24} sm={12} md={6} style={{ textAlign: 'right' }}>
+             <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={showAddModal}
+              >
+                Thêm nhân viên
+              </Button>
+          </Col>
+        </Row>
+
+
+        {/* Bảng hiển thị danh sách nhân viên */}
+        <EmployeeTable
+          employees={filteredAndSearchedEmployees}
+          onEdit={showEditModal}
+          onDelete={handleDelete}
+          // loading={/* Có thể thêm state loading ở đây nếu cần */}
+        />
+      </Card>
+
+      {/* Modal thêm/sửa nhân viên */}
+      <Modal
+        title={editingEmployee ? 'Chỉnh sửa thông tin nhân viên' : 'Thêm nhân viên mới'}
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        footer={null} // Tắt footer mặc định vì đã có nút trong EmployeeForm
+        destroyOnClose // Hủy component trong modal khi đóng để reset state nội bộ (nếu có)
+        width={700} // Tăng chiều rộng modal
+      >
+        <EmployeeForm
+          initialValues={editingEmployee}
+          onSubmit={handleFormSubmit}
+          onCancel={handleCancel}
+          isEditMode={!!editingEmployee} // Chuyển editingEmployee thành boolean
+        />
+      </Modal>
+    </div>
   );
 };
 
-export default App;
+export default EmployeeManagement;
+
+// Tạo file src/pages/EmployeeManagement/EmployeeManagement.css nếu cần style thêm
+// ví dụ:
+// .ant-card-body { padding: 15px !important; }
