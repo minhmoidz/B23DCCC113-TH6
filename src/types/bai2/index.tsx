@@ -1,59 +1,90 @@
-// types/index.ts
+// src/types/index.ts
+import { Moment } from 'moment';
 
-export type AspirationType = 'design' | 'dev' | 'media';
-
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
-
-export interface ApplicationLog {
-  action: ApplicationStatus;
-  timestamp: string;
-  note?: string;
-  admin: string;
-}
-
-export interface Application {
+/**
+ * Destination type
+ */
+export interface DestinationType {
   id: string;
-  fullName: string;
-  email: string;
-  aspiration: AspirationType;
-  reason: string;
-  status: ApplicationStatus;
-  logs: ApplicationLog[];
-  createdAt: string;
+  name: string;
+  location: string;
+  type: string; // beach, mountain, city, countryside, cultural
+  price: number;
+  rating: number;
+  description: string;
+  imageUrl: string;
 }
 
-export interface Member {
+/**
+ * Itinerary day
+ */
+export interface ItineraryDay {
+  date: Moment;
+  destinations: DestinationType[];
+}
+
+/**
+ * Budget category
+ */
+export type BudgetCategory = 'accommodation' | 'food' | 'transportation' | 'activities' | 'shopping' | 'other';
+
+/**
+ * Budget item
+ */
+export interface BudgetItem {
   id: string;
-  fullName: string;
+  name: string;
+  category: BudgetCategory;
+  amount: number;
+  date: Date;
+}
+
+/**
+ * Statistics data
+ */
+export interface StatisticsData {
+  monthlyItineraries: { month: string; count: number }[];
+  popularDestinations: { name: string; count: number }[];
+}
+
+/**
+ * User type
+ */
+export interface User {
+  id: string;
+  name: string;
   email: string;
-  role: string;
-  team: AspirationType;
-  applicationId: string;
-  joinedAt: string;
+  avatar?: string;
+  role: 'user' | 'admin';
 }
 
-export interface StatisticData {
-  design: number;
-  dev: number;
-  media: number;
+/**
+ * Itinerary type
+ */
+export interface Itinerary {
+  id: string;
+  name: string;
+  userId: string;
+  startDate: Date;
+  endDate: Date;
+  days: ItineraryDay[];
+  budget: number;
+  totalCost: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface StatusStatistic {
-  pending: number;
-  approved: number;
-  rejected: number;
-  total: number;
+
+export interface DestinationType {
+  id: string;
+  name: string;
+  location: string;
+  type: string;
+  price: number;
+  rating: number;
+  description: string;
+  imageUrl: string;
 }
 
-export interface TeamStatistic {
-  design: number;
-  dev: number;
-  media: number;
-  total: number;
-}
+export type PriceRange = [number, number]; // Định nghĩa kiểu PriceRange là một mảng 2 phần tử số
 
-export interface Statistics {
-  aspirations: StatisticData;
-  status: StatusStatistic;
-  teams: TeamStatistic;
-}
