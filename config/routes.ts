@@ -37,9 +37,9 @@
 		icon: 'ArrowsAltOutlined',
 	},
   {
-		path: '/bai2',
-		name: 'Bai2',
-		component: './Bai2',
+		path: '/bai1',
+		name: 'Bai1',
+		component: './Bai1',
     icon: 'ArrowsAltOutlined',
 	},
 

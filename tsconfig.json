@@ -35,7 +35,7 @@
 		".stylelintrc.js",
 		".prettierrc.js",
 		"mock/*",
-		"src/pages/Bai2/.tsx"
+		"src/pages/Bai1/.tsx"
 	],
 	"exclude": ["node_modules", "build", "dist", "scripts", "src/.umi/*", "webpack", "jest"]
 }

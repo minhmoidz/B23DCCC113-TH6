@@ -1,8 +1,6 @@
-// components/TaskForm.tsx
 import React, { useEffect } from 'react';
-import { Form, Input, Select, Button, Modal } from 'antd';
-import { Task,User } from '../../types/bai2/index';
-
+import { Modal, Form, Input, Select, Button } from 'antd';
+import { Task, User } from '../../types/bai2';
 
 const { Option } = Select;
 
@@ -26,91 +24,85 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [form] = Form.useForm();
 
   useEffect(() => {
-    console.log("Modal visibility changed:", visible);
+    // Reset form when modal opens or editing task changes
     if (visible) {
+      form.resetFields();
+      
       if (editingTask) {
-        form.setFieldsValue(editingTask);
+        // Populate form with editing task data
+        form.setFieldsValue({
+          title: editingTask.title,
+          assignedTo: editingTask.assignedTo,
+          priority: editingTask.priority,
+          status: editingTask.status,
+        });
       } else {
-        form.resetFields();
         // Set default values for new task
         form.setFieldsValue({
+          assignedTo: currentUser.username,
           priority: 'Medium',
-          status: 'Todo'
+          status: 'Todo',
         });
       }
     }
-  }, [visible, editingTask, form]);
+  }, [visible, editingTask, form, currentUser]);
 
   const handleSubmit = () => {
     form.validateFields()
       .then(values => {
-        console.log("Form values:", values);
-        onSave({
-          ...values,
-          id: editingTask?.id
-        });
+        onSave(values);
         form.resetFields();
       })
       .catch(info => {
-        console.log('Validation failed:', info);
+        console.error('Validate Failed:', info);
       });
   };
 
   return (
     <Modal
-      title={editingTask ? 'Edit Task' : 'Add New Task'}
+      title={editingTask ? "Edit Task" : "Add New Task"}
       visible={visible}
       onCancel={onCancel}
-      maskClosable={false}
-      destroyOnClose={true}
       footer={[
         <Button key="cancel" onClick={onCancel}>
           Cancel
         </Button>,
         <Button key="submit" type="primary" onClick={handleSubmit}>
-          Save
-        </Button>
+          {editingTask ? "Update" : "Create"}
+        </Button>,
       ]}
     >
       <Form
         form={form}
         layout="vertical"
-        initialValues={{
-          priority: 'Medium',
-          status: 'Todo',
-        }}
+        name="taskForm"
       >
         <Form.Item
           name="title"
-          label="Task Name"
-          rules={[{ required: true, message: 'Please enter task name' }]}
+          label="Task Title"
+          rules={[{ required: true, message: 'Please enter task title' }]}
         >
-          <Input placeholder="Enter task name" />
+          <Input placeholder="Enter task title" />
         </Form.Item>
 
         <Form.Item
           name="assignedTo"
           label="Assigned To"
-          rules={[{ required: true, message: 'Please select a team member' }]}
+          rules={[{ required: true, message: 'Please select assignee' }]}
         >
-          <Select placeholder="Select team member">
-            {usernames && usernames.length > 0 ? (
-              usernames.map(username => (
-                <Option key={username} value={username}>{username}</Option>
-              ))
-            ) : (
-              // Fallback if no users are available
-              <Option value={currentUser?.username}>{currentUser?.username || 'Current User'}</Option>
-            )}
+          <Select placeholder="Select an assignee">
+            {usernames.map(username => (
+              <Option key={username} value={username}>{username}</Option>
+            ))}
           </Select>
         </Form.Item>
 
         <Form.Item
           name="priority"
           label="Priority"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: 'Please select priority' }]}
         >
-          <Select>
+          <Select placeholder="Select priority">
             <Option value="Low">Low</Option>
             <Option value="Medium">Medium</Option>
             <Option value="High">High</Option>
@@ -120,9 +112,9 @@ const TaskForm: React.FC<TaskFormProps> = ({
         <Form.Item
           name="status"
           label="Status"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: 'Please select status' }]}
         >
-          <Select>
+          <Select placeholder="Select status">
             <Option value="Todo">Todo</Option>
             <Option value="In Progress">In Progress</Option>
             <Option value="Completed">Completed</Option>

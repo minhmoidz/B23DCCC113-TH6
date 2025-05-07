@@ -12,3 +12,9 @@ export interface User {
   username: string;
   isLoggedIn: boolean;
 }
+
+export interface TaskStats {
+  username: string;
+  count: number;
+  completed: number;
+}
