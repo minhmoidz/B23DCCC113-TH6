@@ -42,6 +42,12 @@
 		component: './Bai1',
     icon: 'ArrowsAltOutlined',
 	},
+	{
+		path: '/bai2',
+		name: 'Bai2',
+		component: './Bai2',
+    icon: 'ArrowsAltOutlined',
+	},
 
 	// DANH MUC HE THONG
 	// {

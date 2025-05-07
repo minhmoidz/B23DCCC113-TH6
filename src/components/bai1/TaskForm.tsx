@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select, Button } from 'antd';
-import { Task, User } from '../../types/bai2';
+import { Task, User } from '../../types/bai1';
 
 const { Option } = Select;
 

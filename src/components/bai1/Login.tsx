@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message } from 'antd';
-import { UserModel } from '../../models/bai2/UserModel';
+import { UserModel } from '../../models/bai1/UserModel';
 
 const { Title } = Typography;
 

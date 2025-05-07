@@ -1,4 +1,4 @@
-import { Task } from '../../types/bai2/index';
+import { Task } from '../../types/bai1/index';
 
 
 export const TaskModel = {

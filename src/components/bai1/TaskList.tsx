@@ -1,13 +1,13 @@
 import React from 'react';
 import { Button, Typography, Row, Col, Badge, Avatar, Divider, Select } from 'antd';
 import { PlusOutlined, SwapOutlined, UserOutlined } from '@ant-design/icons';
-import { User } from '../../types/bai2';
+import { User } from '../../types/bai1';
 import TaskForm from './TaskForm';
 import MyTasksSection from './MyTasksSection';
 import TeamWorkloadSection from './TeamWorkloadSection';
 import TaskStatistics from './TaskStatistics';
 import AllTasksTable from './AllTasksTable';
-import useTasks from '../../hooks/bai2/useTasks';
+import useTasks from '../../hooks/bai1/useTasks';
 
 const { Title } = Typography;
 const { Option } = Select;

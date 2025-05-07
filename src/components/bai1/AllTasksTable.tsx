@@ -1,7 +1,7 @@
 import React from 'react';
 import { Table, Space, Button, Tag, Card, Avatar, Checkbox } from 'antd';
 import { EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
-import { Task } from '../../types/bai2';
+import type { Task } from '../../types/bai1';
 import TaskFilters from './TaskFilters';
 
 interface AllTasksTableProps {
@@ -69,7 +69,7 @@ const AllTasksTable: React.FC<AllTasksTableProps> = ({
       dataIndex: 'priority',
       key: 'priority',
       render: (priority: string) => {
-        let color = priority === 'High' ? 'red' : priority === 'Medium' ? 'orange' : 'green';
+        const color = priority === 'High' ? 'red' : priority === 'Medium' ? 'orange' : 'green';
         return <Tag color={color}>{priority}</Tag>;
       },
     },
@@ -78,7 +78,7 @@ const AllTasksTable: React.FC<AllTasksTableProps> = ({
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        let color = status === 'Completed' ? 'green' : status === 'In Progress' ? 'blue' : 'default';
+        const color = status === 'Completed' ? 'green' : status === 'In Progress' ? 'blue' : 'default';
         return <Tag color={color}>{status}</Tag>;
       },
     },

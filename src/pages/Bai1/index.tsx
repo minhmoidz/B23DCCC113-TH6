@@ -1,10 +1,10 @@
 // App.tsx
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
-import Login from '../../components/bai2/Login';
-import TaskList from '../../components/bai2/TaskList';
-import { UserModel } from '../../models/bai2/UserModel';
-import { User } from '../../types/bai2/index';
+import Login from '../../components/bai1/Login';
+import TaskList from '../../components/bai1/TaskList';
+import { UserModel } from '../../models/bai1/UserModel';
+import { User } from '../../types/bai1/index';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User>({ username: '', isLoggedIn: false });

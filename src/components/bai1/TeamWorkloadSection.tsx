@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Row, Col, Avatar, Typography, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { TaskStats } from '../../types/bai2';
+import { TaskStats } from '../../types/bai1';
 
 const { Text } = Typography;
 

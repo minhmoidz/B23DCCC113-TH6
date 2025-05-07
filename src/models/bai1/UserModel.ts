@@ -1,4 +1,4 @@
-import { User } from '../../types/bai2/index';
+import { User } from '../../types/bai1/index';
 
 
 export const UserModel = {

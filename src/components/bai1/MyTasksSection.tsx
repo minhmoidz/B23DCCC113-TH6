@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button, Empty } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Task } from '../../types/bai2';
+import { Task } from '../../types/bai1';
 import TaskItem from './TaskItem';
 
 interface MyTasksSectionProps {
@@ -39,20 +39,20 @@ const MyTasksSection: React.FC<MyTasksSectionProps> = ({
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="tasks">
-          {(provided) => (
+          {(droppableProvided) => (
             <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
+              {...droppableProvided.droppableProps}
+              ref={droppableProvided.innerRef}
             >
               {tasks.length > 0 ? (
                 tasks.map((task, index) => (
                   <Draggable key={task.id} draggableId={task.id} index={index}>
-                    {(provided) => (
+                    {(draggableProvided) => (
                       <TaskItem
                         task={task}
                         onEdit={onEditTask}
                         onDelete={onDeleteTask}
-                        provided={provided}
+                        provided={draggableProvided}
                       />
                     )}
                   </Draggable>
@@ -60,7 +60,7 @@ const MyTasksSection: React.FC<MyTasksSectionProps> = ({
               ) : (
                 <Empty description="No tasks assigned to you yet" />
               )}
-              {provided.placeholder}
+              {droppableProvided.placeholder}
             </div>
           )}
         </Droppable>

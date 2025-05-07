@@ -8,8 +8,8 @@ import {
   ApplicationStatus,
   AspirationType,
   ApplicationLog
-} from '../../src/types/bai2/index';
-import { generateId, getCurrentDateTimeString } from '../../src/utils/bai2/helpers';
+} from '../types/bai1/index';
+import { generateId, getCurrentDateTimeString } from '../utils/bai1/helpers';
 
 interface AppContextType {
   applications: Application[];

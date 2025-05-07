@@ -1,7 +1,7 @@
 import React from 'react';
 import { Row, Col, Tag, Button, Space, Checkbox } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Task } from '../../types/bai2';
+import { Task } from '../../types/bai1';
 
 interface TaskItemProps {
   task: Task;

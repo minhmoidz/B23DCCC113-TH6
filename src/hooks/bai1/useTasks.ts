@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Task, User, TaskStats } from '../../types/bai2';
-import { TaskModel } from '../../models/bai2/TaskModel';
+import { Task, User, TaskStats } from '../../types/bai1';
+import { TaskModel } from '../../models/bai1/TaskModel';
 
 export const useTasks = (currentUser: User, registeredUsers: string[]) => {
   const [tasks, setTasks] = useState<Task[]>(() => {
