@@ -1,102 +1,57 @@
-// src/App.tsx
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
-import { Layout, Menu, Button, Avatar, Dropdown, Typography } from 'antd';
-import {
-  HomeOutlined, CompassOutlined, CalendarOutlined,
-  WalletOutlined, UserOutlined, SettingOutlined,
-  LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined
-} from '@ant-design/icons';
-import DiscoverPage from "./DiscoverPage";
-import ItineraryPlanner from './ItineraryPlanner';
-import BudgetManager from './BudgetManager';
-import AdminPage from './AdminPage';
-
-
-const { Header, Sider, Content } = Layout;
-const { Title } = Typography;
+// App.tsx
+import React, { useEffect, useState } from 'react';
+import { ConfigProvider } from 'antd';
+import Login from '../../components/bai2/Login';
+import TaskList from '../../components/bai2/TaskList';
+import { UserModel } from '../../models/bai2/UserModel';
+import { User } from '../../types/bai2/index';
 
 const App: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [currentUser, setCurrentUser] = useState<User>({ username: '', isLoggedIn: false });
+  const [registeredUsers, setRegisteredUsers] = useState<string[]>([]);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setCollapsed(true);
-      }
-    };
+    // Check if user is already logged in
+    const user = UserModel.getCurrentUser();
+    setCurrentUser(user);
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Load registered users from localStorage
+    const users = localStorage.getItem('registeredUsers');
+    const usersList = users ? JSON.parse(users) : [];
+    setRegisteredUsers(usersList);
   }, []);
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<UserOutlined />}>
-        Hồ sơ cá nhân
-      </Menu.Item>
-      <Menu.Item key="settings" icon={<SettingOutlined />}>
-        Cài đặt
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />}>
-        Đăng xuất
-      </Menu.Item>
-    </Menu>
-  );
+  const handleLoginSuccess = () => {
+    const user = UserModel.getCurrentUser();
+    setCurrentUser(user);
+
+    // Add user to registered users list if not already there
+    if (user.username && !registeredUsers.includes(user.username)) {
+      const updatedUsers = [...registeredUsers, user.username];
+      setRegisteredUsers(updatedUsers);
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+    }
+  };
+
+  const handleLogout = () => {
+    UserModel.logout();
+    setCurrentUser({ username: '', isLoggedIn: false });
+  };
 
   return (
-    <Router>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Sider
-          trigger={null}
-          collapsible
-          collapsed={collapsed}
-          breakpoint="lg"
-          collapsedWidth={isMobile ? 0 : 80}
-          className="app-sider"
-        >
-          <div className="logo">
-            {!collapsed && "Travel Planner"}
-          </div>
-          <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
-            <Menu.Item key="1" icon={<CompassOutlined />}>
-              <Link to="/">Khám phá</Link>
-            </Menu.Item>
-            <Menu.Item key="2" icon={<CalendarOutlined />}>
-              <Link to="/itinerary">Lịch trình</Link>
-            </Menu.Item>
-            <Menu.Item key="3" icon={<WalletOutlined />}>
-              <Link to="/budget">Ngân sách</Link>
-            </Menu.Item>
-            <Menu.Item key="4" icon={<SettingOutlined />}>
-              <Link to="/admin">Quản trị</Link>
-            </Menu.Item>
-          </Menu>
-        </Sider>
-        <Layout className="site-layout">
-          <Header className="site-header">
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              className="trigger-button"
-            />
-
-          </Header>
-          <Content className="site-content">
-            <Switch>
-            <Route path="/" exact component={DiscoverPage} />
-            <Route path="/itinerary" component={ItineraryPlanner} />
-            <Route path="/budget" component={BudgetManager} />
-            <Route path="/admin" component={AdminPage} />
-                      </Switch>
-          </Content>
-        </Layout>
-      </Layout>
-    </Router>
+    <ConfigProvider>
+      <div className="app-container">
+        {currentUser.isLoggedIn ? (
+          <TaskList
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            registeredUsers={registeredUsers}
+          />
+        ) : (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        )}
+      </div>
+    </ConfigProvider>
   );
 };
 
